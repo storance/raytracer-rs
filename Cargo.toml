@@ -1,0 +1,6 @@
+[package]
+name = "raytracer-rs"
+version = "0.1.0"
+authors = ["Steven Torance <storance@gmail.com>"]
+
+[dependencies]
