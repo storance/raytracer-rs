@@ -3,4 +3,11 @@ name = "raytracer-rs"
 version = "0.1.0"
 authors = ["Steven Torance <storance@gmail.com>"]
 
+[features]
+default = []
+
+# Use 64-bit floatig point numbers instead of 32-bit
+float64 = []
+
 [dependencies]
+num = "0.1.37"
