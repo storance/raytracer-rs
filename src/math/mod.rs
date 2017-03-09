@@ -1,5 +1,6 @@
 pub mod scalar;
 pub mod vector;
+pub mod point;
 
 #[derive(Debug)]
 pub enum Dimension2 {

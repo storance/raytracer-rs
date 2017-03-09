@@ -1,4 +1,4 @@
-use num::{One, Zero, Signed, Float};
+use num::{Zero, Signed, Float};
 use math::{Dimension2, Dimension3};
 use math::scalar::{FloatScalar, IntScalar, BaseNum, BaseFloat, partial_min, partial_max};
 
@@ -15,44 +15,6 @@ pub struct Vector3<T> {
     pub x: T,
     pub y: T,
     pub z: T,
-}
-
-pub trait VectorSpace: Copy + Clone where
-    Self: Zero,
-    Self: Add<Self, Output = Self>,
-    Self: Sub<Self, Output = Self>,
-    Self: Mul<<Self as VectorSpace>::Scalar, Output = Self>,
-    Self: Div<<Self as VectorSpace>::Scalar, Output = Self> {
-    type Scalar: BaseNum;
-
-    fn min_component(self) -> Self::Scalar;
-
-    fn max_component(self) -> Self::Scalar;
-
-    fn min_components(self, other: Self) -> Self;
-
-    fn max_components(self, other: Self) -> Self;
-}
-
-pub trait InnerSpace: VectorSpace where 
-    <Self as VectorSpace>::Scalar: BaseFloat {
-    fn dot(self, other: Self) -> Self::Scalar;
-
-    fn magnitude(self) -> Self::Scalar {
-        Float::sqrt(self.magnitude_squared())
-    }
-
-    fn magnitude_squared(self) -> Self::Scalar {
-        Self::dot(self, self)
-    }
-
-    fn normalize(self) -> Self {
-        self * (Self::Scalar::one() / self.magnitude())
-    }
-
-    fn lerp(self, other: Self, amount: Self::Scalar) -> Self {
-        self + ((other - self) * amount)
-    }
 }
 
 //
@@ -83,13 +45,21 @@ impl <T: BaseNum> Vector3<T> {
         Vector3::new(T::zero(), T::zero(), T::one())
     }
 
-    fn cross(self, other: Vector3<T>) -> Vector3<T> {
+    pub fn cross(self, other: Vector3<T>) -> Vector3<T> {
         Vector3::new((self.y * other.z) - (self.z * other.y),
             (self.z * other.x) - (self.x * other.z),
             (self.x * other.y) - (self.y * other.x))
     }
 
-    fn max_dimension(self) -> Dimension3 {
+    pub fn min_component(self) -> T {
+        partial_min(self.x, partial_min(self.y, self.z))
+    }
+
+    pub fn max_component(self) -> T {
+        partial_max(self.x, partial_max(self.y, self.z))
+    }
+
+    pub fn max_dimension(self) -> Dimension3 {
         if self.x > self.y && self.x > self.z {
             Dimension3::X
         } else if self.y > self.x && self.y > self.z {
@@ -97,6 +67,40 @@ impl <T: BaseNum> Vector3<T> {
         } else {
             Dimension3::Z
         }
+    }
+
+    pub fn component_wise_min(self, other: Vector3<T>) -> Vector3<T> {
+        Vector3::new(partial_min(self.x, other.x), partial_min(self.y, other.y), partial_min(self.z, other.z))
+    }
+
+    pub fn component_wise_max(self, other: Vector3<T>) -> Vector3<T> {
+        Vector3::new(partial_max(self.x, other.x), partial_max(self.y, other.y), partial_max(self.z, other.z))
+    }
+
+    pub fn permute(&self, x: Dimension3, y: Dimension3, z: Dimension3) -> Vector3<T> {
+        Vector3::new(self[x], self[y], self[z])
+    }
+}
+
+impl <T: BaseFloat> Vector3<T> {
+    pub fn dot(self, other: Vector3<T>) -> T {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+    pub fn magnitude(self) -> T {
+        Float::sqrt(self.magnitude_squared())
+    }
+
+    pub fn magnitude_squared(self) -> T {
+        self.x * self.x + self.y * self.y + self.z * self.z
+    }
+
+    pub fn normalize(self) -> Vector3<T> {
+        self * (T::one() / self.magnitude())
+    }
+
+    pub fn lerp(self, other: Vector3<T>, amount: T) -> Vector3<T> {
+        self + ((other - self) * amount)
     }
 }
 
@@ -125,17 +129,17 @@ impl <T: BaseNum> Index<Dimension3> for Vector3<T> {
     }
 }
 
+impl <T: BaseNum + Signed> Vector3<T> {
+    pub fn abs(self) -> Vector3<T> {
+        Vector3::new(self.x.abs(), self.y.abs(), self.z.abs())
+    }
+}
+
 impl <T: BaseNum + Neg<Output = T>> Neg for Vector3<T> {
     type Output = Vector3<T>;
 
     fn neg(self) -> Vector3<T> {
         Vector3::new(-self.x, -self.y, -self.z)
-    }
-}
-
-impl <T: BaseNum + Signed> Vector3<T> {
-    fn abs(self) -> Vector3<T> {
-        Vector3::new(self.x.abs(), self.y.abs(), self.z.abs())
     }
 }
 
@@ -214,32 +218,6 @@ impl <T: BaseNum> DivAssign<T> for Vector3<T> {
     }
 }
 
-impl <T: BaseNum> VectorSpace for Vector3<T> {
-    type Scalar = T;
-
-    fn min_component(self) -> T {
-        partial_min(self.x, partial_min(self.y, self.z))
-    }
-
-    fn max_component(self) -> T {
-        partial_max(self.x, partial_max(self.y, self.z))
-    }
-
-    fn min_components(self, other: Vector3<T>) -> Vector3<T> {
-        Vector3::new(partial_min(self.x, other.x), partial_min(self.y, other.y), partial_min(self.z, other.z))
-    }
-
-    fn max_components(self, other: Vector3<T>) -> Vector3<T> {
-        Vector3::new(partial_max(self.x, other.x), partial_max(self.y, other.y), partial_max(self.z, other.z))
-    }
-}
-
-impl <T: BaseFloat> InnerSpace for Vector3<T> {
-    fn dot(self, other: Vector3<T>) -> T {
-        self.x * other.x + self.y * other.y + self.z * other.z
-    }
-}
-
 //
 // Vector2
 //
@@ -263,12 +241,50 @@ impl <T: BaseNum> Vector2<T> {
         Vector2::new(T::zero(), T::one())
     }
 
-    fn max_dimension(self) -> Dimension2 {
+    pub fn min_component(self) -> T {
+        partial_min(self.x, self.y)
+    }
+
+    pub fn max_component(self) -> T {
+        partial_max(self.x, self.y)
+    }
+
+    pub fn max_dimension(self) -> Dimension2 {
         if self.x > self.y {
             Dimension2::X
         } else {
             Dimension2::Y
         }
+    }
+
+    pub fn component_wise_min(self, other: Vector2<T>) -> Vector2<T> {
+        Vector2::new(partial_min(self.x, other.x), partial_min(self.y, other.y))
+    }
+
+    pub fn component_wise_max(self, other: Vector2<T>) -> Vector2<T> {
+        Vector2::new(partial_max(self.x, other.x), partial_max(self.y, other.y))
+    }
+}
+
+impl <T: BaseFloat> Vector2<T> {
+    pub fn dot(self, other: Vector2<T>) -> T {
+        self.x * other.x + self.y * other.y
+    }
+
+    pub fn magnitude(self) -> T {
+        Float::sqrt(self.magnitude_squared())
+    }
+
+    pub fn magnitude_squared(self) -> T {
+        self.x * self.x + self.y * self.y
+    }
+
+    pub fn normalize(self) -> Vector2<T> {
+        self * (T::one() / self.magnitude())
+    }
+
+    pub fn lerp(self, other: Vector2<T>, amount: T) -> Vector2<T> {
+        self + ((other - self) * amount)
     }
 }
 
@@ -295,17 +311,17 @@ impl <T: BaseNum> Index<Dimension2> for Vector2<T> {
     }
 }
 
+impl <T: BaseNum + Signed> Vector2<T> {
+    pub fn abs(&self) -> Vector2<T> {
+        Vector2::new(self.x.abs(), self.y.abs())
+    }
+}
+
 impl <T: BaseNum + Neg<Output = T>> Neg for Vector2<T> {
     type Output = Vector2<T>;
 
     fn neg(self) -> Vector2<T> {
         Vector2::new(-self.x, -self.y)
-    }
-}
-
-impl <T: BaseNum + Signed> Vector2<T> {
-    fn abs(&self) -> Vector2<T> {
-        Vector2::new(self.x.abs(), self.y.abs())
     }
 }
 
@@ -379,46 +395,12 @@ impl <T: BaseNum> DivAssign<T> for Vector2<T> {
     }
 }
 
-impl <T: BaseNum> VectorSpace for Vector2<T> {
-    type Scalar = T;
-
-    fn min_component(self) -> T {
-        partial_min(self.x, self.y)
-    }
-
-    fn max_component(self) -> T {
-        partial_max(self.x, self.y)
-    }
-
-    fn min_components(self, other: Vector2<T>) -> Vector2<T> {
-        Vector2::new(partial_min(self.x, other.x), partial_min(self.y, other.y))
-    }
-
-    fn max_components(self, other: Vector2<T>) -> Vector2<T> {
-        Vector2::new(partial_max(self.x, other.x), partial_max(self.y, other.y))
-    }
-}
-
-impl <T: BaseFloat> InnerSpace for Vector2<T> {
-    fn dot(self, other: Vector2<T>) -> T {
-        self.x * other.x + self.y * other.y
-    }
-}
-
 pub fn vec2<T: BaseNum>(x: T, y: T) -> Vector2<T> {
     Vector2::new(x, y)
 }
 
 pub fn vec3<T: BaseNum>(x: T, y: T, z: T) -> Vector3<T> {
     Vector3::new(x, y, z)
-}
-
-pub fn dot<S: BaseFloat, V: InnerSpace<Scalar = S>>(v1 : V, v2: V) -> S {
-    v1.dot(v2)
-}
-
-pub fn cross<T: BaseNum>(v1: Vector3<T>, v2: Vector3<T>) -> Vector3<T> {
-    v1.cross(v2)
 }
 
 pub fn coordinate_system<T: BaseFloat>(v1: Vector3<T>) -> (Vector3<T>, Vector3<T>) {
@@ -428,18 +410,6 @@ pub fn coordinate_system<T: BaseFloat>(v1: Vector3<T>) -> (Vector3<T>, Vector3<T
         Vector3::new(T::zero(), v1.z, -v1.y).normalize()
     };
     (v2, v1.cross(v2))
-}
-
-pub fn permute<T: BaseNum>(v: Vector3<T>, x: Dimension3, y: Dimension3, z: Dimension3) -> Vector3<T> {
-    Vector3::new(v[x], v[y], v[z])
-}
-
-pub fn min_components<V: VectorSpace>(v1 : V, v2: V) -> V {
-    v1.min_components(v2)
-}
-
-pub fn max_components<V: VectorSpace>(v1 : V, v2: V) -> V {
-    v1.max_components(v2)
 }
 
 pub type Vector3i = Vector3<IntScalar>;
