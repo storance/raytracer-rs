@@ -46,3 +46,19 @@ impl BaseInt for usize {}
 
 impl BaseFloat for f32 {}
 impl BaseFloat for f64 {}
+
+pub fn partial_min<T: cmp::PartialOrd>(a: T, b: T) -> T {
+    if a < b {
+        a
+    } else {
+        b
+    }
+}
+
+pub fn partial_max<T: cmp::PartialOrd>(a: T, b: T) -> T {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
