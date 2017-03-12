@@ -1,7 +1,7 @@
-use num::{Zero, Signed, Float};
-use math::{Dimension2, Dimension3};
-use math::scalar::{FloatScalar, IntScalar, BaseNum, BaseFloat, partial_min, partial_max};
+use num::{Zero, Signed};
 
+use math::common::*;
+use math::scalar::*;
 use std::ops::*;
 
 #[derive(PartialEq, Eq, Copy, Clone, Hash)]
@@ -51,56 +51,8 @@ impl <T: BaseNum> Vector3<T> {
             (self.x * other.y) - (self.y * other.x))
     }
 
-    pub fn min_component(self) -> T {
-        partial_min(self.x, partial_min(self.y, self.z))
-    }
-
-    pub fn max_component(self) -> T {
-        partial_max(self.x, partial_max(self.y, self.z))
-    }
-
-    pub fn max_dimension(self) -> Dimension3 {
-        if self.x > self.y && self.x > self.z {
-            Dimension3::X
-        } else if self.y > self.x && self.y > self.z {
-            Dimension3::Y
-        } else {
-            Dimension3::Z
-        }
-    }
-
-    pub fn component_wise_min(self, other: Vector3<T>) -> Vector3<T> {
-        Vector3::new(partial_min(self.x, other.x), partial_min(self.y, other.y), partial_min(self.z, other.z))
-    }
-
-    pub fn component_wise_max(self, other: Vector3<T>) -> Vector3<T> {
-        Vector3::new(partial_max(self.x, other.x), partial_max(self.y, other.y), partial_max(self.z, other.z))
-    }
-
     pub fn permute(&self, x: Dimension3, y: Dimension3, z: Dimension3) -> Vector3<T> {
         Vector3::new(self[x], self[y], self[z])
-    }
-}
-
-impl <T: BaseFloat> Vector3<T> {
-    pub fn dot(self, other: Vector3<T>) -> T {
-        self.x * other.x + self.y * other.y + self.z * other.z
-    }
-
-    pub fn magnitude(self) -> T {
-        Float::sqrt(self.magnitude_squared())
-    }
-
-    pub fn magnitude_squared(self) -> T {
-        self.x * self.x + self.y * self.y + self.z * self.z
-    }
-
-    pub fn normalize(self) -> Vector3<T> {
-        self * (T::one() / self.magnitude())
-    }
-
-    pub fn lerp(self, other: Vector3<T>, amount: T) -> Vector3<T> {
-        self + ((other - self) * amount)
     }
 }
 
@@ -129,9 +81,13 @@ impl <T: BaseNum> Index<Dimension3> for Vector3<T> {
     }
 }
 
-impl <T: BaseNum + Signed> Vector3<T> {
-    pub fn abs(self) -> Vector3<T> {
-        Vector3::new(self.x.abs(), self.y.abs(), self.z.abs())
+impl <T: BaseNum> Zero for Vector3<T> {
+    fn zero() -> Vector3<T> {
+        Vector3::new(T::zero(), T::zero(), T::zero())
+    }
+
+    fn is_zero(&self) -> bool {
+        self.x == T::zero() && self.y == T::zero() && self.z == T::zero()
     }
 }
 
@@ -140,16 +96,6 @@ impl <T: BaseNum + Neg<Output = T>> Neg for Vector3<T> {
 
     fn neg(self) -> Vector3<T> {
         Vector3::new(-self.x, -self.y, -self.z)
-    }
-}
-
-impl <T: BaseNum> Zero for Vector3<T> {
-    fn zero() -> Vector3<T> {
-        Vector3::new(T::zero(), T::zero(), T::zero())
-    }
-
-    fn is_zero(&self) -> bool {
-        self.x == T::zero() && self.y == T::zero() && self.z == T::zero()
     }
 }
 
@@ -166,7 +112,6 @@ impl <T: BaseNum> AddAssign for Vector3<T> {
         self.x += other.x;
         self.y += other.y;
         self.z += other.z;
-
     }
 }
 
@@ -218,6 +163,76 @@ impl <T: BaseNum> DivAssign<T> for Vector3<T> {
     }
 }
 
+impl <T: BaseNum> ComponentWise for Vector3<T> {
+    type Scalar = T;
+    type Dimension = Dimension3;
+
+    fn min_component(self) -> T {
+        partial_min(self.x, partial_min(self.y, self.z))
+    }
+
+    fn max_component(self) -> T {
+        partial_max(self.x, partial_max(self.y, self.z))
+    }
+
+    fn max_dimension(self) -> Dimension3 {
+        if self.x > self.y && self.x > self.z {
+            Dimension3::X
+        } else if self.y > self.x && self.y > self.z {
+            Dimension3::Y
+        } else {
+            Dimension3::Z
+        }
+    }
+
+    fn min(self, other: Vector3<T>) -> Vector3<T> {
+        Vector3::new(partial_min(self.x, other.x), partial_min(self.y, other.y), partial_min(self.z, other.z))
+    }
+
+    fn max(self, other: Vector3<T>) -> Vector3<T> {
+        Vector3::new(partial_max(self.x, other.x), partial_max(self.y, other.y), partial_max(self.z, other.z))
+    }
+}
+
+impl <T: BaseNum + Signed> ComponentWiseSigned for Vector3<T> {
+    fn abs(self) -> Vector3<T> {
+        Vector3::new(self.x.abs(), self.y.abs(), self.z.abs())
+    }
+}
+
+impl <T: BaseFloat> ComponentWiseFloat for Vector3<T> {
+    fn floor(self) -> Vector3<T> {
+        Vector3::new(self.x.floor(), self.y.floor(), self.z.floor())
+    }
+
+    fn ceil(self) -> Vector3<T> {
+        Vector3::new(self.x.ceil(), self.y.ceil(), self.z.ceil())
+    }
+}
+
+impl <T: BaseNum> VectorSpace for Vector3<T> {
+    type Scalar = T;
+}
+
+impl <T: BaseFloat> InnerProductSpace for Vector3<T> {
+    fn dot(self, other: Vector3<T>) -> T {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+}
+
+impl <T: BaseFloat> MetricSpace for Vector3<T> {
+    type Scalar = T;
+
+    fn distance_squared(self, other: Vector3<T>) -> T {
+        (self - other).magnitude_squared()
+    }
+}
+
+impl <T: BaseFloat> LinearInterpolate for Vector3<T> {
+    type Scalar = T;
+}
+
+
 //
 // Vector2
 //
@@ -239,52 +254,6 @@ impl <T: BaseNum> Vector2<T> {
 
     pub fn unit_y() -> Vector2<T> {
         Vector2::new(T::zero(), T::one())
-    }
-
-    pub fn min_component(self) -> T {
-        partial_min(self.x, self.y)
-    }
-
-    pub fn max_component(self) -> T {
-        partial_max(self.x, self.y)
-    }
-
-    pub fn max_dimension(self) -> Dimension2 {
-        if self.x > self.y {
-            Dimension2::X
-        } else {
-            Dimension2::Y
-        }
-    }
-
-    pub fn component_wise_min(self, other: Vector2<T>) -> Vector2<T> {
-        Vector2::new(partial_min(self.x, other.x), partial_min(self.y, other.y))
-    }
-
-    pub fn component_wise_max(self, other: Vector2<T>) -> Vector2<T> {
-        Vector2::new(partial_max(self.x, other.x), partial_max(self.y, other.y))
-    }
-}
-
-impl <T: BaseFloat> Vector2<T> {
-    pub fn dot(self, other: Vector2<T>) -> T {
-        self.x * other.x + self.y * other.y
-    }
-
-    pub fn magnitude(self) -> T {
-        Float::sqrt(self.magnitude_squared())
-    }
-
-    pub fn magnitude_squared(self) -> T {
-        self.x * self.x + self.y * self.y
-    }
-
-    pub fn normalize(self) -> Vector2<T> {
-        self * (T::one() / self.magnitude())
-    }
-
-    pub fn lerp(self, other: Vector2<T>, amount: T) -> Vector2<T> {
-        self + ((other - self) * amount)
     }
 }
 
@@ -311,9 +280,13 @@ impl <T: BaseNum> Index<Dimension2> for Vector2<T> {
     }
 }
 
-impl <T: BaseNum + Signed> Vector2<T> {
-    pub fn abs(&self) -> Vector2<T> {
-        Vector2::new(self.x.abs(), self.y.abs())
+impl <T: BaseNum> Zero for Vector2<T> {
+    fn zero() -> Vector2<T> {
+        Vector2::new(T::zero(), T::zero())
+    }
+
+    fn is_zero(&self) -> bool {
+        self.x == T::zero() && self.y == T::zero()
     }
 }
 
@@ -322,16 +295,6 @@ impl <T: BaseNum + Neg<Output = T>> Neg for Vector2<T> {
 
     fn neg(self) -> Vector2<T> {
         Vector2::new(-self.x, -self.y)
-    }
-}
-
-impl <T: BaseNum> Zero for Vector2<T> {
-    fn zero() -> Vector2<T> {
-        Vector2::new(T::zero(), T::zero())
-    }
-
-    fn is_zero(&self) -> bool {
-        self.x == T::zero() && self.y == T::zero()
     }
 }
 
@@ -393,6 +356,73 @@ impl <T: BaseNum> DivAssign<T> for Vector2<T> {
         self.x /= scalar;
         self.y /= scalar;
     }
+}
+
+impl <T: BaseNum> ComponentWise for Vector2<T> {
+    type Scalar = T;
+    type Dimension = Dimension2;
+
+    fn min_component(self) -> T {
+        partial_min(self.x, self.y)
+    }
+
+    fn max_component(self) -> T {
+        partial_max(self.x, self.y)
+    }
+
+    fn max_dimension(self) -> Dimension2 {
+        if self.x > self.y {
+            Dimension2::X
+        } else {
+            Dimension2::Y
+        }
+    }
+
+    fn min(self, other: Vector2<T>) -> Vector2<T> {
+        Vector2::new(partial_min(self.x, other.x), partial_min(self.y, other.y))
+    }
+
+    fn max(self, other: Vector2<T>) -> Vector2<T> {
+        Vector2::new(partial_max(self.x, other.x), partial_max(self.y, other.y))
+    }
+}
+
+impl <T: BaseNum + Signed> ComponentWiseSigned for Vector2<T> {
+    fn abs(self) -> Vector2<T> {
+        Vector2::new(self.x.abs(), self.y.abs())
+    }
+}
+
+impl <T: BaseFloat> ComponentWiseFloat for Vector2<T> {
+    fn floor(self) -> Vector2<T> {
+        Vector2::new(self.x.floor(), self.y.floor())
+    }
+
+    fn ceil(self) -> Vector2<T> {
+        Vector2::new(self.x.ceil(), self.y.ceil())
+    }
+}
+
+impl <T: BaseNum> VectorSpace for Vector2<T> {
+    type Scalar = T;
+}
+
+impl <T: BaseFloat> InnerProductSpace for Vector2<T> {
+    fn dot(self, other: Vector2<T>) -> T {
+        self.x * other.x + self.y * other.y
+    }
+}
+
+impl <T: BaseFloat> MetricSpace for Vector2<T> {
+    type Scalar = T;
+
+    fn distance_squared(self, other: Vector2<T>) -> T {
+        (self - other).magnitude_squared()
+    }
+}
+
+impl <T: BaseFloat> LinearInterpolate for Vector2<T> {
+    type Scalar = T;
 }
 
 pub fn vec2<T: BaseNum>(x: T, y: T) -> Vector2<T> {

@@ -1,6 +1,6 @@
 use num::{Zero, Signed};
-use math::{Dimension2, Dimension3};
-use math::scalar::{FloatScalar, IntScalar, BaseNum, BaseFloat, partial_min, partial_max};
+use math::common::*;
+use math::scalar::*;
 use math::vector::{Vector2, Vector3};
 
 use std::ops::*;
@@ -39,56 +39,8 @@ impl <T: BaseNum> Point3<T> {
         Vector3::new(self.x, self.y, self.z)
     }
 
-    pub fn min_component(self) -> T {
-        partial_min(self.x, partial_min(self.y, self.z))
-    }
-
-    pub fn max_component(self) -> T {
-        partial_max(self.x, partial_max(self.y, self.z))
-    }
-
-    pub fn max_dimension(self) -> Dimension3 {
-        if self.x > self.y && self.x > self.z {
-            Dimension3::X
-        } else if self.y > self.x && self.y > self.z {
-            Dimension3::Y
-        } else {
-            Dimension3::Z
-        }
-    }
-
-    pub fn component_wise_min(self, other: Point3<T>) -> Point3<T> {
-        Point3::new(partial_min(self.x, other.x), partial_min(self.y, other.y), partial_min(self.z, other.z))
-    }
-
-    pub fn component_wise_max(self, other: Point3<T>) -> Point3<T> {
-        Point3::new(partial_max(self.x, other.x), partial_max(self.y, other.y), partial_max(self.z, other.z))
-    }
-
     pub fn permute(&self, x: Dimension3, y: Dimension3, z: Dimension3) -> Point3<T> {
         Point3::new(self[x], self[y], self[z])
-    }
-}
-
-impl <T: BaseFloat> Point3<T> {
-    pub fn distance(self, other: Point3<T>) -> T {
-        (self - other).magnitude()
-    }
-
-    pub fn distance_squared(self, other: Point3<T>) -> T {
-        (self - other).magnitude_squared()
-    }
-
-    pub fn lerp(self, other: Point3<T>, amount: T) -> Point3<T> {
-        self + ((other - self) * amount)
-    }
-
-    pub fn floor(self) -> Point3<T> {
-        Point3::new(self.x.floor(), self.y.floor(), self.z.floor())
-    }
-
-    pub fn ceil(self) -> Point3<T> {
-        Point3::new(self.x.ceil(), self.y.ceil(), self.z.ceil())
     }
 }
 
@@ -127,12 +79,6 @@ impl <T: BaseNum> Zero for Point3<T> {
     }
 }
 
-impl <T: BaseNum + Signed> Point3<T> {
-    pub fn abs(&self) -> Point3<T> {
-        Point3::new(self.x.abs(), self.y.abs(), self.z.abs())
-    }
-}
-
 impl <T: BaseNum + Neg<Output = T>> Neg for Point3<T> {
     type Output = Point3<T>;
 
@@ -151,22 +97,6 @@ impl <T: BaseNum> Add for Point3<T> {
 
 impl <T: BaseNum> AddAssign for Point3<T> {
     fn add_assign(&mut self, other: Point3<T>) {
-        self.x += other.x;
-        self.y += other.y;
-        self.z += other.z;
-    }
-}
-
-impl <T: BaseNum> Add<Vector3<T>> for Point3<T> {
-    type Output = Point3<T>;
-
-    fn add(self, other: Vector3<T>) -> Point3<T> {
-        Point3::new(self.x + other.x, self.y + other.y, self.z + other.z)
-    }
-}
-
-impl <T: BaseNum> AddAssign<Vector3<T>> for Point3<T> {
-    fn add_assign(&mut self, other: Vector3<T>) {
         self.x += other.x;
         self.y += other.y;
         self.z += other.z;
@@ -229,6 +159,65 @@ impl <T: BaseNum> DivAssign<T> for Point3<T> {
     }
 }
 
+impl <T: BaseNum> ComponentWise for Point3<T> {
+    type Scalar = T;
+    type Dimension = Dimension3;
+
+    fn min_component(self) -> T {
+        partial_min(self.x, partial_min(self.y, self.z))
+    }
+
+    fn max_component(self) -> T {
+        partial_max(self.x, partial_max(self.y, self.z))
+    }
+
+    fn max_dimension(self) -> Dimension3 {
+        if self.x > self.y && self.x > self.z {
+            Dimension3::X
+        } else if self.y > self.x && self.y > self.z {
+            Dimension3::Y
+        } else {
+            Dimension3::Z
+        }
+    }
+
+    fn min(self, other: Point3<T>) -> Point3<T> {
+        Point3::new(partial_min(self.x, other.x), partial_min(self.y, other.y), partial_min(self.z, other.z))
+    }
+
+    fn max(self, other: Point3<T>) -> Point3<T> {
+        Point3::new(partial_max(self.x, other.x), partial_max(self.y, other.y), partial_max(self.z, other.z))
+    }
+}
+
+impl <T: BaseNum + Signed> ComponentWiseSigned for Point3<T> {
+    fn abs(self) -> Point3<T> {
+        Point3::new(self.x.abs(), self.y.abs(), self.z.abs())
+    }
+}
+
+impl <T: BaseFloat> ComponentWiseFloat for Point3<T> {
+    fn floor(self) -> Point3<T> {
+        Point3::new(self.x.floor(), self.y.floor(), self.z.floor())
+    }
+
+    fn ceil(self) -> Point3<T> {
+        Point3::new(self.x.ceil(), self.y.ceil(), self.z.ceil())
+    }
+}
+
+impl <T: BaseFloat> MetricSpace for Point3<T> {
+    type Scalar = T;
+
+    fn distance_squared(self, other: Point3<T>) -> T {
+        (self - other).magnitude_squared()
+    }
+}
+
+impl <T: BaseFloat> LinearInterpolate for Point3<T> {
+    type Scalar = T;
+}
+
 //
 // Point2
 //
@@ -258,52 +247,6 @@ impl <T: BaseNum> Point2<T> {
 
     pub fn to_vector2(&self) -> Vector2<T> {
         Vector2::new(self.x, self.y)
-    }
-
-    pub fn min_component(self) -> T {
-        partial_min(self.x, self.y)
-    }
-
-    pub fn max_component(self) -> T {
-        partial_max(self.x, self.y)
-    }
-
-    pub fn max_dimension(self) -> Dimension2 {
-        if self.x > self.y {
-            Dimension2::X
-        } else {
-            Dimension2::Y
-        }
-    }
-
-    pub fn component_wise_min(self, other: Point2<T>) -> Point2<T> {
-        Point2::new(partial_min(self.x, other.x), partial_min(self.y, other.y))
-    }
-
-    pub fn component_wise_max(self, other: Point2<T>) -> Point2<T> {
-        Point2::new(partial_max(self.x, other.x), partial_max(self.y, other.y))
-    }
-}
-
-impl <T: BaseFloat> Point2<T> {
-    pub fn distance(self, other: Point2<T>) -> T {
-        (self - other).magnitude()
-    }
-
-    pub fn distance_squared(self, other: Point2<T>) -> T {
-        (self - other).magnitude_squared()
-    }
-
-    pub fn lerp(self, other: Point2<T>, amount: T) -> Point2<T> {
-        self + ((other - self) * amount)
-    }
-
-    pub fn floor(self) -> Point2<T> {
-        Point2::new(self.x.floor(), self.y.floor())
-    }
-
-    pub fn ceil(self) -> Point2<T> {
-        Point2::new(self.x.ceil(), self.y.ceil())
     }
 }
 
@@ -340,12 +283,6 @@ impl <T: BaseNum> Zero for Point2<T> {
     }
 }
 
-impl <T: BaseNum + Signed> Point2<T> {
-    pub fn abs(&self) -> Point2<T> {
-        Point2::new(self.x.abs(), self.y.abs())
-    }
-}
-
 impl <T: BaseNum + Neg<Output = T>> Neg for Point2<T> {
     type Output = Point2<T>;
 
@@ -364,21 +301,6 @@ impl <T: BaseNum> Add for Point2<T> {
 
 impl <T: BaseNum> AddAssign for Point2<T> {
     fn add_assign(&mut self, other: Point2<T>) {
-        self.x += other.x;
-        self.y += other.y;
-    }
-}
-
-impl <T: BaseNum> Add<Vector2<T>> for Point2<T> {
-    type Output = Point2<T>;
-
-    fn add(self, other: Vector2<T>) -> Point2<T> {
-        Point2::new(self.x + other.x, self.y + other.y)
-    }
-}
-
-impl <T: BaseNum> AddAssign<Vector2<T>> for Point2<T> {
-    fn add_assign(&mut self, other: Vector2<T>) {
         self.x += other.x;
         self.y += other.y;
     }
@@ -435,6 +357,63 @@ impl <T: BaseNum> DivAssign<T> for Point2<T> {
         self.x /= scalar;
         self.y /= scalar;
     }
+}
+
+impl <T: BaseNum> ComponentWise for Point2<T> {
+    type Scalar = T;
+    type Dimension = Dimension2;
+
+    fn min_component(self) -> T {
+        partial_min(self.x, self.y)
+    }
+
+    fn max_component(self) -> T {
+        partial_max(self.x, self.y)
+    }
+
+    fn max_dimension(self) -> Dimension2 {
+        if self.x > self.y {
+            Dimension2::X
+        } else {
+            Dimension2::Y
+        }
+    }
+
+    fn min(self, other: Point2<T>) -> Point2<T> {
+        Point2::new(partial_min(self.x, other.x), partial_min(self.y, other.y))
+    }
+
+    fn max(self, other: Point2<T>) -> Point2<T> {
+        Point2::new(partial_max(self.x, other.x), partial_max(self.y, other.y))
+    }
+}
+
+impl <T: BaseNum + Signed> ComponentWiseSigned for Point2<T> {
+    fn abs(self) -> Point2<T> {
+        Point2::new(self.x.abs(), self.y.abs())
+    }
+}
+
+impl <T: BaseFloat> ComponentWiseFloat for Point2<T> {
+    fn floor(self) -> Point2<T> {
+        Point2::new(self.x.floor(), self.y.floor())
+    }
+
+    fn ceil(self) -> Point2<T> {
+        Point2::new(self.x.ceil(), self.y.ceil())
+    }
+}
+
+impl <T: BaseFloat> MetricSpace for Point2<T> {
+    type Scalar = T;
+
+    fn distance_squared(self, other: Point2<T>) -> T {
+        (self - other).magnitude_squared()
+    }
+}
+
+impl <T: BaseFloat> LinearInterpolate for Point2<T> {
+    type Scalar = T;
 }
 
 pub type Point2i = Point2<IntScalar>;

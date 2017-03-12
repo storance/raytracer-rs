@@ -14,7 +14,7 @@ pub trait BaseNum where
     Self: num::Num + num::NumCast + num::ToPrimitive,
     Self: ops::AddAssign + ops::SubAssign + ops::MulAssign + ops::DivAssign {}
 
-pub trait BaseFloat: BaseNum + num::Float {}
+pub trait BaseFloat: BaseNum + num::Float + num::Signed {}
 
 pub trait BaseInt: BaseNum {}
 
