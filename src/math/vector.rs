@@ -1,16 +1,18 @@
 use num::{Zero, Signed};
-
+use std::convert::From;
+use math::point::{Point2, Point3};
+use math::normal::Normal3;
 use math::common::*;
 use math::scalar::*;
 use std::ops::*;
 
-#[derive(PartialEq, Eq, Copy, Clone, Hash)]
+#[derive(PartialEq, Copy, Clone)]
 pub struct Vector2<T> {
     pub x: T,
     pub y: T,
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Hash)]
+#[derive(PartialEq, Copy, Clone)]
 pub struct Vector3<T> {
     pub x: T,
     pub y: T,
@@ -45,14 +47,26 @@ impl <T: BaseNum> Vector3<T> {
         Vector3::new(T::zero(), T::zero(), T::one())
     }
 
-    pub fn cross(self, other: Vector3<T>) -> Vector3<T> {
-        Vector3::new((self.y * other.z) - (self.z * other.y),
-            (self.z * other.x) - (self.x * other.z),
-            (self.x * other.y) - (self.y * other.x))
-    }
-
     pub fn permute(&self, x: Dimension3, y: Dimension3, z: Dimension3) -> Vector3<T> {
         Vector3::new(self[x], self[y], self[z])
+    }
+}
+
+impl <T: BaseNum> From<T> for Vector3<T> {
+    fn from(s: T) -> Vector3<T> {
+        Vector3::new(s, s, s)
+    }
+}
+
+impl <T: BaseNum> From<Point3<T>> for Vector3<T> {
+    fn from(p: Point3<T>) -> Vector3<T> {
+        Vector3::new(p.x, p.y, p.z)
+    }
+}
+
+impl <T: BaseNum> From<Normal3<T>> for Vector3<T> {
+    fn from(n: Normal3<T>) -> Vector3<T> {
+        Vector3::new(n.x, n.y, n.z)
     }
 }
 
@@ -214,11 +228,39 @@ impl <T: BaseNum> VectorSpace for Vector3<T> {
     type Scalar = T;
 }
 
-impl <T: BaseFloat> InnerProductSpace for Vector3<T> {
+impl <T: BaseNum> CrossProduct for Vector3<T> {
+    type CrossOutput = Vector3<T>;
+    
+    fn cross(self, other: Vector3<T>) -> Vector3<T> {
+        Vector3::new((self.y * other.z) - (self.z * other.y),
+            (self.z * other.x) - (self.x * other.z),
+            (self.x * other.y) - (self.y * other.x))
+    }
+}
+
+impl <T: BaseNum> CrossProduct<Normal3<T>> for Vector3<T> {
+    type CrossOutput = Vector3<T>;
+    
+    fn cross(self, other: Normal3<T>) -> Vector3<T> {
+        Vector3::new((self.y * other.z) - (self.z * other.y),
+            (self.z * other.x) - (self.x * other.z),
+            (self.x * other.y) - (self.y * other.x))
+    }
+}
+
+impl <T: BaseNum> InnerProduct for Vector3<T> {
     fn dot(self, other: Vector3<T>) -> T {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 }
+
+impl <T: BaseNum> InnerProduct<Normal3<T>> for Vector3<T> {
+    fn dot(self, other: Normal3<T>) -> T {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+}
+
+impl <T: BaseFloat> InnerProductSpace for Vector3<T> {}
 
 impl <T: BaseFloat> MetricSpace for Vector3<T> {
     type Scalar = T;
@@ -254,6 +296,18 @@ impl <T: BaseNum> Vector2<T> {
 
     pub fn unit_y() -> Vector2<T> {
         Vector2::new(T::zero(), T::one())
+    }
+}
+
+impl <T: BaseNum> From<T> for Vector2<T> {
+    fn from(s: T) -> Vector2<T> {
+        Vector2::new(s, s)
+    }
+}
+
+impl <T: BaseNum> From<Point2<T>> for Vector2<T> {
+    fn from(v: Point2<T>) -> Vector2<T> {
+        Vector2::new(v.x, v.y)
     }
 }
 
@@ -407,11 +461,13 @@ impl <T: BaseNum> VectorSpace for Vector2<T> {
     type Scalar = T;
 }
 
-impl <T: BaseFloat> InnerProductSpace for Vector2<T> {
+impl <T: BaseNum> InnerProduct for Vector2<T> {
     fn dot(self, other: Vector2<T>) -> T {
         self.x * other.x + self.y * other.y
     }
 }
+
+impl <T: BaseFloat> InnerProductSpace for Vector2<T> {}
 
 impl <T: BaseFloat> MetricSpace for Vector2<T> {
     type Scalar = T;

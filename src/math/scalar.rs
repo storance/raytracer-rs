@@ -3,6 +3,8 @@ use std::fmt;
 use std::ops;
 use num;
 
+use math::common::LinearInterpolate;
+
 pub type IntScalar = i32;
 #[cfg(not(feature = "float64"))]
 pub type FloatScalar = f32;
@@ -61,4 +63,12 @@ pub fn partial_max<T: cmp::PartialOrd>(a: T, b: T) -> T {
     } else {
         b
     }
+}
+
+impl LinearInterpolate for f32 {
+    type Scalar = f32;
+}
+
+impl LinearInterpolate for f64 {
+    type Scalar = f64;
 }

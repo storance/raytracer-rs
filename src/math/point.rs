@@ -1,21 +1,21 @@
 use num::{Zero, Signed};
+use math::vector::{Vector2, Vector3};
 use math::common::*;
 use math::scalar::*;
-use math::vector::{Vector2, Vector3};
-
+use std::convert::From;
 use std::ops::*;
 
-#[derive(PartialEq, Eq, Copy, Clone, Hash)]
+#[derive(PartialEq, Copy, Clone)]
 pub struct Point2<T> {
-    x: T,
-    y: T,
+    pub x: T,
+    pub y: T,
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Hash)]
+#[derive(PartialEq, Copy, Clone)]
 pub struct Point3<T> {
-    x: T,
-    y: T,
-    z: T,
+    pub x: T,
+    pub y: T,
+    pub z: T,
 }
 
 impl <T: BaseNum> Point3<T> {
@@ -27,20 +27,20 @@ impl <T: BaseNum> Point3<T> {
         }
     }
 
-    pub fn from_value(s: T) -> Point3<T> {
-        Point3::new(s, s, s)
-    }
-
-    pub fn from_vector3(v: Vector3<T>) -> Point3<T> {
-        Point3::new(v.x, v.y, v.z)
-    }
-
-    pub fn to_vector3(&self) -> Vector3<T> {
-        Vector3::new(self.x, self.y, self.z)
-    }
-
     pub fn permute(&self, x: Dimension3, y: Dimension3, z: Dimension3) -> Point3<T> {
         Point3::new(self[x], self[y], self[z])
+    }
+}
+
+impl <T: BaseNum> From<T> for Point3<T> {
+    fn from(s: T) -> Point3<T> {
+        Point3::new(s, s, s)
+    }
+}
+
+impl <T: BaseNum> From<Vector3<T>> for Point3<T> {
+    fn from(v: Vector3<T>) -> Point3<T> {
+        Point3::new(v.x, v.y, v.z)
     }
 }
 
@@ -97,6 +97,22 @@ impl <T: BaseNum> Add for Point3<T> {
 
 impl <T: BaseNum> AddAssign for Point3<T> {
     fn add_assign(&mut self, other: Point3<T>) {
+        self.x += other.x;
+        self.y += other.y;
+        self.z += other.z;
+    }
+}
+
+impl <T: BaseNum> Add<Vector3<T>> for Point3<T> {
+    type Output = Point3<T>;
+
+    fn add(self, other: Vector3<T>) -> Point3<T> {
+        Point3::new(self.x + other.x, self.y + other.y, self.z + other.z)
+    }
+}
+
+impl <T: BaseNum> AddAssign<Vector3<T>> for Point3<T> {
+    fn add_assign(&mut self, other: Vector3<T>) {
         self.x += other.x;
         self.y += other.y;
         self.z += other.z;
@@ -228,25 +244,29 @@ impl <T: BaseNum> Point2<T> {
             y: y,
         }
     }
+}
 
-    pub fn from_value(s: T) -> Point2<T> {
+impl <T: BaseNum> From<T> for Point2<T> {
+    fn from(s: T) -> Point2<T> {
         Point2::new(s, s)
     }
+}
 
-    pub fn from_point3(p: Point3<T>) -> Point2<T> {
+impl <T: BaseNum> From<Vector3<T>> for Point2<T> {
+    fn from(v: Vector3<T>) -> Point2<T> {
+        Point2::new(v.x, v.y)
+    }
+}
+
+impl <T: BaseNum> From<Point3<T>> for Point2<T> {
+    fn from(p: Point3<T>) -> Point2<T> {
         Point2::new(p.x, p.y)
     }
+}
 
-    pub fn from_vector2(v: Vector2<T>) -> Point2<T> {
+impl <T: BaseNum> From<Vector2<T>> for Point2<T> {
+    fn from(v: Vector2<T>) -> Point2<T> {
         Point2::new(v.x, v.y)
-    }
-
-    pub fn from_vector3(v: Vector3<T>) -> Point2<T> {
-        Point2::new(v.x, v.y)
-    }
-
-    pub fn to_vector2(&self) -> Vector2<T> {
-        Vector2::new(self.x, self.y)
     }
 }
 
@@ -301,6 +321,21 @@ impl <T: BaseNum> Add for Point2<T> {
 
 impl <T: BaseNum> AddAssign for Point2<T> {
     fn add_assign(&mut self, other: Point2<T>) {
+        self.x += other.x;
+        self.y += other.y;
+    }
+}
+
+impl <T: BaseNum> Add<Vector2<T>> for Point2<T> {
+    type Output = Point2<T>;
+
+    fn add(self, other: Vector2<T>) -> Point2<T> {
+        Point2::new(self.x + other.x, self.y + other.y)
+    }
+}
+
+impl <T: BaseNum> AddAssign<Vector2<T>> for Point2<T> {
+    fn add_assign(&mut self, other: Vector2<T>) {
         self.x += other.x;
         self.y += other.y;
     }

@@ -1,6 +1,6 @@
 use num::{Zero, One, Signed, Float};
 use math::scalar::{BaseNum, BaseFloat};
-use std::ops::{Add, Sub, Mul, Div, Index};
+use std::ops::{Add, Sub, Mul, Div, Index, Neg};
 
 #[derive(Debug)]
 pub enum Dimension2 {
@@ -53,10 +53,18 @@ pub trait VectorSpace: Copy + Clone where
     type Scalar: BaseNum;
 }
 
-pub trait InnerProductSpace: VectorSpace where
-    <Self as VectorSpace>::Scalar: BaseFloat, {
-    fn dot(self, other: Self) -> Self::Scalar;
+pub trait InnerProduct<RHS = Self>: VectorSpace {
+    fn dot(self, other: RHS) -> Self::Scalar;
+}
 
+pub trait CrossProduct<RHS = Self>: VectorSpace {
+    type CrossOutput: VectorSpace;
+
+    fn cross(self, other: RHS) -> Self::CrossOutput;
+}
+
+pub trait InnerProductSpace: InnerProduct where
+    <Self as VectorSpace>::Scalar: BaseFloat, {
     fn magnitude(self) -> Self::Scalar {
         Float::sqrt(self.magnitude_squared())
     }
@@ -70,14 +78,14 @@ pub trait InnerProductSpace: VectorSpace where
     }
 }
 
-pub trait MetricSpace: Copy + Clone {
+pub trait MetricSpace<RHS = Self>: Copy + Clone {
     type Scalar: BaseFloat;
 
-    fn distance(self, other: Self) -> Self::Scalar {
+    fn distance(self, other: RHS) -> Self::Scalar {
         Float::sqrt(self.distance_squared(other))
     }
 
-    fn distance_squared(self, other: Self) -> Self::Scalar;
+    fn distance_squared(self, other: RHS) -> Self::Scalar;
 }
 
 pub trait LinearInterpolate: Copy + Clone where
@@ -90,10 +98,42 @@ pub trait LinearInterpolate: Copy + Clone where
     }
 }
 
-impl LinearInterpolate for f32 {
-    type Scalar = f32;
+pub fn dot<T: InnerProduct, U: InnerProduct<T>>(v1: U, v2: T) -> U::Scalar {
+    v1.dot(v2)
 }
 
-impl LinearInterpolate for f64 {
-    type Scalar = f64;
+pub fn cross<T: CrossProduct, U: CrossProduct<T>>(v1: U, v2: T) -> U::CrossOutput {
+    v1.cross(v2)
+}
+
+pub fn min_component<T: ComponentWise>(v: T) -> T::Scalar {
+    v.min_component()
+}
+
+pub fn max_component<T: ComponentWise>(v: T) -> T::Scalar {
+    v.max_component()
+}
+
+pub fn distance<T: MetricSpace>(v1: T, v2:T) -> T::Scalar {
+    v1.distance(v2)
+}
+
+pub fn distance_squared<T: MetricSpace>(v1: T, v2:T) -> T::Scalar {
+    v1.distance_squared(v2)
+}
+
+pub fn component_wise_min<T: ComponentWise>(v1: T, v2: T) -> T {
+    v1.min(v2)
+}
+
+pub fn component_wise_max<T: ComponentWise>(v1: T, v2: T) -> T {
+    v1.max(v2)
+}
+
+pub fn face_forward<T: InnerProduct, U: InnerProduct<T> + Neg<Output = U>>(v1: U, v2: T) -> U {
+    if dot(v1, v2) < U::Scalar::zero() {
+        -v1
+    } else {
+        v1
+    }
 }
