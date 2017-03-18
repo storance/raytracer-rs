@@ -1,18 +1,18 @@
 use num::{Zero, Signed};
-use std::convert::From;
 use math::point::{Point2, Point3};
 use math::normal::Normal3;
+use std::convert::From;
 use math::common::*;
 use math::scalar::*;
 use std::ops::*;
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Vector2<T> {
     pub x: T,
     pub y: T,
 }
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Vector3<T> {
     pub x: T,
     pub y: T,

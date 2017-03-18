@@ -102,6 +102,11 @@ pub fn dot<T: InnerProduct, U: InnerProduct<T>>(v1: U, v2: T) -> U::Scalar {
     v1.dot(v2)
 }
 
+pub fn abs_dot<T: InnerProduct, U: InnerProduct<T>>(v1: U, v2: T) -> U::Scalar 
+    where U::Scalar: Signed {
+    v1.dot(v2).abs()
+}
+
 pub fn cross<T: CrossProduct, U: CrossProduct<T>>(v1: U, v2: T) -> U::CrossOutput {
     v1.cross(v2)
 }
@@ -114,11 +119,11 @@ pub fn max_component<T: ComponentWise>(v: T) -> T::Scalar {
     v.max_component()
 }
 
-pub fn distance<T: MetricSpace>(v1: T, v2:T) -> T::Scalar {
+pub fn distance<T: MetricSpace>(v1: T, v2: T) -> T::Scalar {
     v1.distance(v2)
 }
 
-pub fn distance_squared<T: MetricSpace>(v1: T, v2:T) -> T::Scalar {
+pub fn distance_squared<T: MetricSpace>(v1: T, v2: T) -> T::Scalar {
     v1.distance_squared(v2)
 }
 
