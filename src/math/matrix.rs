@@ -1,5 +1,7 @@
 use num::Zero;
 use std::convert::From;
+use math::common::{cross, dot};
+use math::vector::{Vector3f, vec3};
 use math::scalar::*;
 use std::ops::*;
 
@@ -218,6 +220,16 @@ impl Matrix3x3 {
         Matrix2x2::new(self.m[fst_row][fst_col], self.m[fst_row][snd_col],
                        self.m[snd_row][fst_col], self.m[snd_row][snd_col])
     }
+
+    pub fn from_vectors(r0: Vector3f, r1: Vector3f, r2: Vector3f) -> Matrix3x3 {
+        Matrix3x3 {
+            m: [
+                [r0.x, r0.y, r0.z],
+                [r1.x, r1.y, r1.z],
+                [r2.x, r2.y, r2.z],
+            ],
+        }
+    }
 }
 
 impl From<Matrix3x3Array> for Matrix3x3 {
@@ -344,27 +356,24 @@ impl Matrix for Matrix3x3 {
         if det == 0.0 {
             None
         } else {
+            let x0 = vec3(self.m[0][0], self.m[0][1], self.m[0][2]);
+            let x1 = vec3(self.m[1][0], self.m[1][1], self.m[1][2]);
+            let x2 = vec3(self.m[2][0], self.m[2][1], self.m[2][2]);
             let inv_det = 1.0 / det;
-            Some(Matrix3x3::new(
-                self.minor(0, 0).determinant() * inv_det,
-                self.minor(0, 1).determinant() * inv_det,
-                self.minor(0, 2).determinant() * inv_det,
 
-                self.minor(1, 0).determinant() * inv_det,
-                self.minor(1, 1).determinant() * inv_det,
-                self.minor(1, 2).determinant() * inv_det,
-
-                self.minor(2, 0).determinant() * inv_det,
-                self.minor(2, 1).determinant() * inv_det,
-                self.minor(2, 2).determinant() * inv_det
-            ))
+            Some(Matrix3x3::from_vectors(
+                cross(x1, x2) * inv_det,
+                cross(x2, x0) * inv_det,
+                cross(x0, x1) * inv_det))
         }
     }
 
     fn determinant(&self) -> FloatScalar {
-        self.m[0][0] * self.minor(0, 0).determinant()
-            - self.m[0][1] * self.minor(0, 1).determinant()
-            + self.m[0][2] * self.minor(0, 2).determinant()
+        let x0 = vec3(self.m[0][0], self.m[0][1], self.m[0][2]);
+        let x1 = vec3(self.m[1][0], self.m[1][1], self.m[1][2]);
+        let x2 = vec3(self.m[2][0], self.m[2][1], self.m[2][2]);
+
+        dot(x0, cross(x1, x2))
     }
 }
 
